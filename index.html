@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description"
+        content="Sistema de gestión de finanzas personales - Control de ingresos, egresos y tarjetas de crédito">
+    <title>FinanzasApp - Gestión Financiera Personal</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+    <!-- Header -->
+    <header class="app-header">
+        <div class="header-content">
+            <div class="logo">
+                <span class="logo-icon">💰</span>
+                <h1>FinanzasApp</h1>
+            </div>
+            <button class="btn-settings" id="btn-open-settings" title="Configuración">
+                <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                    stroke-linejoin="round" viewBox="0 0 24 24">
+                    <circle cx="12" cy="12" r="3" />
+                    <path
+                        d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+                </svg>
+            </button>
+        </div>
+    </header>
+
+    <!-- Summary Cards -->
+    <section class="summary-section">
+        <div class="summary-cards">
+            <div class="summary-card income-card">
+                <div class="card-icon">📈</div>
+                <div class="card-info">
+                    <span class="card-label">Total Ingresos</span>
+                    <span class="card-value" id="total-income">$0.00</span>
+                </div>
+            </div>
+            <div class="summary-card expense-card">
+                <div class="card-icon">📉</div>
+                <div class="card-info">
+                    <span class="card-label">Total Egresos</span>
+                    <span class="card-value" id="total-expenses">$0.00</span>
+                </div>
+            </div>
+            <div class="summary-card balance-card">
+                <div class="card-icon">💎</div>
+                <div class="card-info">
+                    <span class="card-label">Balance</span>
+                    <span class="card-value" id="total-balance">$0.00</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Transaction Form -->
+        <section class="form-section glass-panel">
+            <h2 class="section-title">✏️ Nueva Transacción</h2>
+            <form id="transaction-form">
+                <div class="form-row toggles-row">
+                    <div class="toggle-group">
+                        <label class="toggle-label">Movimiento</label>
+                        <div class="toggle-buttons" id="income-expense-toggle">
+                            <button type="button" class="toggle-btn active" data-value="expense">Egreso</button>
+                            <button type="button" class="toggle-btn" data-value="income">Ingreso</button>
+                        </div>
+                    </div>
+                    <div class="toggle-group">
+                        <label class="toggle-label">Tipo de Pago</label>
+                        <div class="toggle-buttons" id="payment-type-toggle">
+                            <button type="button" class="toggle-btn" data-value="cash">Efectivo</button>
+                            <button type="button" class="toggle-btn active" data-value="debit">Débito</button>
+                            <button type="button" class="toggle-btn" data-value="credit">Crédito</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="tx-date">Fecha</label>
+                        <input type="date" id="tx-date" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="tx-amount">Monto</label>
+                        <input type="number" id="tx-amount" placeholder="0.00" min="0.01" step="0.01" required>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="tx-bank">Banco</label>
+                        <select id="tx-bank" required>
+                            <option value="">Seleccionar banco...</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="tx-category">Categoría</label>
+                        <select id="tx-category" required>
+                            <option value="">Seleccionar categoría...</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row" id="msi-row" style="display:none;">
+                    <div class="form-group">
+                        <label for="tx-installments">Meses sin Intereses</label>
+                        <select id="tx-installments">
+                            <option value="1">Pago único</option>
+                            <option value="3">3 meses</option>
+                            <option value="6">6 meses</option>
+                            <option value="9">9 meses</option>
+                            <option value="12">12 meses</option>
+                            <option value="18">18 meses</option>
+                            <option value="24">24 meses</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group full-width">
+                        <label for="tx-description">Descripción (opcional)</label>
+                        <input type="text" id="tx-description" placeholder="Descripción del movimiento...">
+                    </div>
+                </div>
+                <div class="credit-info" id="credit-info">
+                    <span class="credit-info-icon">💳</span>
+                    <span id="credit-info-text">Selecciona un banco y fecha para ver el mes de pago.</span>
+                </div>
+                <button type="submit" class="btn-submit" id="btn-add-transaction">
+                    <span>＋</span> Agregar Transacción
+                </button>
+            </form>
+        </section>
+
+        <!-- Monthly Summary -->
+        <section class="monthly-section glass-panel">
+            <div class="monthly-header">
+                <h2 class="section-title">📊 Resumen Mensual — Total a Pagar</h2>
+            </div>
+            <!-- Global totals always visible -->
+            <div id="monthly-global" class="monthly-global">
+                <div class="empty-state">
+                    <span class="empty-icon">📊</span>
+                    <p>Agrega transacciones para ver el resumen mensual</p>
+                </div>
+            </div>
+            <!-- Button to open full detail sheet -->
+            <button class="btn-detail" id="btn-open-monthly-sheet">
+                Ver detalle por mes ›
+            </button>
+        </section>
+    </main>
+
+    <!-- Transaction History -->
+    <section class="history-section">
+        <div class="history-header">
+            <h2 class="section-title">📋 Historial de Transacciones</h2>
+            <div class="history-filters">
+                <select id="filter-month" class="filter-select">
+                    <option value="all">Todos los meses</option>
+                </select>
+                <select id="filter-type" class="filter-select">
+                    <option value="all">Todos</option>
+                    <option value="income">Ingresos</option>
+                    <option value="expense">Egresos</option>
+                </select>
+            </div>
+        </div>
+        <div class="table-container glass-panel">
+            <table class="tx-table" id="transactions-table">
+                <thead>
+                    <tr>
+                        <th>Fecha</th>
+                        <th>Descripción</th>
+                        <th>Categoría</th>
+                        <th>Banco</th>
+                        <th>Tipo</th>
+                        <th>Monto</th>
+                        <th>Mes Pago</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody id="transactions-body">
+                </tbody>
+            </table>
+            <div class="empty-state" id="table-empty">
+                <span class="empty-icon">📋</span>
+                <p>No hay transacciones registradas</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Settings Modal -->
+    <div class="modal-overlay" id="settings-modal">
+        <div class="modal glass-panel">
+            <div class="modal-header">
+                <h2>⚙️ Configuración</h2>
+                <button class="btn-close" id="btn-close-settings">✕</button>
+            </div>
+            <div class="modal-body">
+                <div class="modal-tabs">
+                    <button class="tab-btn active" data-tab="banks-tab">🏦 Bancos</button>
+                    <button class="tab-btn" data-tab="categories-tab">🏷️ Categorías</button>
+                </div>
+                <!-- Banks Tab -->
+                <div class="tab-content active" id="banks-tab">
+                    <div class="settings-form">
+                        <div class="form-row align-end">
+                            <div class="form-group">
+                                <label for="bank-name">Nombre del Banco / Tarjeta</label>
+                                <input type="text" id="bank-name" placeholder="Ej: BBVA">
+                            </div>
+                            <div class="form-group small">
+                                <label for="bank-card-type">Tipo</label>
+                                <select id="bank-card-type">
+                                    <option value="credit">Crédito</option>
+                                    <option value="debit">Débito</option>
+                                </select>
+                            </div>
+                            <div class="form-group small" id="bank-cutoff-group">
+                                <label for="bank-cutoff">Día de Corte</label>
+                                <input type="number" id="bank-cutoff" min="1" max="31" placeholder="1-31">
+                            </div>
+                            <div class="form-group small" id="bank-payment-group">
+                                <label for="bank-payment-day">Día de Pago</label>
+                                <input type="number" id="bank-payment-day" min="1" max="31" placeholder="1-31">
+                            </div>
+                            <button type="button" class="btn-add-small" id="btn-add-bank">＋ Agregar</button>
+                        </div>
+                    </div>
+                    <div class="settings-list" id="banks-list"></div>
+                </div>
+                <!-- Categories Tab -->
+                <div class="tab-content" id="categories-tab">
+                    <div class="settings-form">
+                        <div class="form-row align-end">
+                            <div class="form-group">
+                                <label for="category-name">Nombre</label>
+                                <input type="text" id="category-name" placeholder="Ej: Alimentación">
+                            </div>
+                            <div class="form-group small">
+                                <label for="category-icon">Emoji</label>
+                                <input type="text" id="category-icon" placeholder="🍔" maxlength="4">
+                            </div>
+                            <div class="form-group">
+                                <label for="category-link-bank">¿Pago de tarjeta?</label>
+                                <select id="category-link-bank">
+                                    <option value="">No aplica</option>
+                                </select>
+                            </div>
+                            <button type="button" class="btn-add-small" id="btn-add-category">＋ Agregar</button>
+                        </div>
+                    </div>
+                    <div class="settings-list" id="categories-list"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Monthly Detail Sheet (full-screen drawer) -->
+    <div class="sheet-overlay" id="monthly-sheet">
+        <div class="sheet-panel glass-panel">
+            <div class="sheet-header">
+                <div class="sheet-header-left">
+                    <button class="btn-sheet-back" id="btn-close-monthly-sheet">
+                        <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+                    </button>
+                    <h2>📊 Detalle por Mes</h2>
+                </div>
+            </div>
+            <div class="sheet-body">
+                <div class="monthly-cards" id="monthly-summary-detail"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast -->
+    <div class="toast" id="toast">
+        <span class="toast-icon" id="toast-icon"></span>
+        <span class="toast-message" id="toast-message"></span>
+    </div>
+
+    <footer class="app-footer">
+        <p>FinanzasApp © 2026 — Tus finanzas bajo control</p>
+    </footer>
+
+    <script src="app.js"></script>
+</body>
+
+</html>0  
+ 1  
+ 
