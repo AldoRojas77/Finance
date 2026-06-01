@@ -2,19 +2,59 @@
 'use strict';
 
 const MONTHS_ES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
-const KEYS = { TX: 'finapp_transactions', BANKS: 'finapp_banks', CATS: 'finapp_categories' };
+// ==================== FIREBASE CONFIG ====================
+const firebaseConfig = {
+  apiKey: "AIzaSyD0cdPTNrsg14d1L4kMmKn8INuKzpTTK-k",
+  authDomain: "finance-2af8d.firebaseapp.com",
+  projectId: "finance-2af8d",
+  storageBucket: "finance-2af8d.firebasestorage.app",
+  messagingSenderId: "706059362237",
+  appId: "1:706059362237:web:d0603c8cfb9a1b26c93cd4"
+};
+
+if (!firebase.apps.length) {
+  firebase.initializeApp(firebaseConfig);
+}
+const db = firebase.firestore();
 
 // ==================== STATE ====================
 let state = { transactions: [], banks: [], categories: [] };
 
-function load() {
-  state.transactions = JSON.parse(localStorage.getItem(KEYS.TX) || '[]');
-  state.banks = JSON.parse(localStorage.getItem(KEYS.BANKS) || '[]');
-  state.categories = JSON.parse(localStorage.getItem(KEYS.CATS) || '[]');
+async function load() {
+  try {
+    const [txSnap, bankSnap, catSnap] = await Promise.all([
+      db.collection('transactions').get(),
+      db.collection('banks').get(),
+      db.collection('categories').get()
+    ]);
+    state.transactions = txSnap.docs.map(d => d.data());
+    state.banks = bankSnap.docs.map(d => d.data());
+    state.categories = catSnap.docs.map(d => d.data());
+    refreshAll();
+  } catch (e) {
+    console.error("Firebase load error:", e);
+    showToast("Error al cargar datos", "error");
+  }
 }
-function saveTx() { localStorage.setItem(KEYS.TX, JSON.stringify(state.transactions)); }
-function saveBanks() { localStorage.setItem(KEYS.BANKS, JSON.stringify(state.banks)); }
-function saveCats() { localStorage.setItem(KEYS.CATS, JSON.stringify(state.categories)); }
+
+async function saveTxDoc(tx) {
+  try { await db.collection('transactions').doc(tx.id).set(tx); } catch(e){ console.error(e); }
+}
+async function deleteTxDoc(id) {
+  try { await db.collection('transactions').doc(id).delete(); } catch(e){ console.error(e); }
+}
+async function saveBankDoc(bank) {
+  try { await db.collection('banks').doc(bank.id).set(bank); } catch(e){ console.error(e); }
+}
+async function deleteBankDoc(id) {
+  try { await db.collection('banks').doc(id).delete(); } catch(e){ console.error(e); }
+}
+async function saveCatDoc(cat) {
+  try { await db.collection('categories').doc(cat.id).set(cat); } catch(e){ console.error(e); }
+}
+async function deleteCatDoc(id) {
+  try { await db.collection('categories').doc(id).delete(); } catch(e){ console.error(e); }
+}
 function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 8); }
 function fmt(n) { return new Intl.NumberFormat('es-MX', { style:'currency', currency:'MXN' }).format(n); }
 function fmtDate(d) {
@@ -403,6 +443,9 @@ function refreshAll() {
   renderCategoryOptions();
   updateFilterMonths();
   updateCreditInfo();
+  renderBanksList();
+  renderCategoryLinkBankOptions();
+  renderCategoriesList();
 }
 
 // ==================== EVENT HANDLERS ====================
@@ -485,8 +528,9 @@ function setupForm() {
     if (!amount || amount <= 0) { showToast('Ingresa un monto válido', 'error'); return; }
     if (!date || !isValidDate(date)) { showToast('Selecciona una fecha válida', 'error'); return; }
 
-    state.transactions.push({ id: uid(), date, amount, bankId, paymentType, isIncome, categoryId, description, installments });
-    saveTx();
+    const tx = { id: uid(), date, amount, bankId, paymentType, isIncome, categoryId, description, installments };
+    state.transactions.push(tx);
+    saveTxDoc(tx);
     form.reset();
     document.getElementById('tx-date').valueAsDate = new Date();
     document.getElementById('tx-installments').value = '1';
@@ -534,8 +578,9 @@ function setupBanks() {
     if (cardType === 'credit' && (!paymentDay || paymentDay < 1 || paymentDay > 31)) {
       showToast('Día de pago inválido (1-31)', 'error'); return;
     }
-    state.banks.push({ id: uid(), name, cardType, cutoffDay: cutoff, paymentDay });
-    saveBanks();
+    const bank = { id: uid(), name, cardType, cutoffDay: cutoff, paymentDay };
+    state.banks.push(bank);
+    saveBankDoc(bank);
     nameEl.value = ''; cutoffEl.value = ''; paymentDayEl.value = ''; cardTypeEl.value = 'credit';
     updateCutoffFieldVisibility();
     renderBanksList(); renderBankOptions(); updateCreditInfo();
@@ -548,7 +593,7 @@ function setupBanks() {
     const bank = state.banks.find(b => b.id === id);
     if (confirm(`¿Eliminar banco "${bank?.name}"?`)) {
       state.banks = state.banks.filter(b => b.id !== id);
-      saveBanks(); renderBanksList(); renderBankOptions(); refreshAll();
+      deleteBankDoc(id); renderBanksList(); renderBankOptions(); refreshAll();
       showToast('Banco eliminado', 'success');
     }
   });
@@ -562,8 +607,9 @@ function setupCategories() {
   btn.addEventListener('click', () => {
     const v = input.value.trim();
     if (v) {
-      state.categories.push({ id: uid(), name: v, icon: iconInput.value.trim() || '📂', linkedBankId: linkSelect.value || null });
-      saveCats(); renderCategoriesList(); renderCategoryOptions(); input.value = ''; iconInput.value = ''; linkSelect.value = '';
+      const cat = { id: uid(), name: v, icon: iconInput.value.trim() || '📂', linkedBankId: linkSelect.value || null };
+      state.categories.push(cat);
+      saveCatDoc(cat); renderCategoriesList(); renderCategoryOptions(); input.value = ''; iconInput.value = ''; linkSelect.value = '';
       showToast(`Categoría "${v}" agregada ✓`, 'success');
     }
   });
@@ -574,7 +620,7 @@ function setupCategories() {
     const cat = state.categories.find(c => c.id === id);
     if (confirm(`¿Eliminar categoría "${cat?.name}"?`)) {
       state.categories = state.categories.filter(c => c.id !== id);
-      saveCats(); renderCategoriesList(); renderCategoryOptions();
+      deleteCatDoc(id); renderCategoriesList(); renderCategoryOptions();
       showToast('Categoría eliminada', 'success');
     }
   });
@@ -585,8 +631,9 @@ function setupDeleteTx() {
     const btn = e.target.closest('[data-id]');
     if (!btn) return;
     if (confirm('¿Eliminar esta transacción?')) {
-      state.transactions = state.transactions.filter(t => t.id !== btn.dataset.id);
-      saveTx(); refreshAll();
+      const id = btn.dataset.id;
+      state.transactions = state.transactions.filter(t => t.id !== id);
+      deleteTxDoc(id); refreshAll();
       showToast('Transacción eliminada', 'success');
     }
   });
@@ -631,8 +678,7 @@ function showToast(msg, type) {
 }
 
 // ==================== INIT ====================
-function init() {
-  load();
+async function init() {
   setupToggles();
   setupModal();
   setupMonthlySheet();
@@ -645,11 +691,9 @@ function init() {
   setupCreditInfoWatchers();
   setupPaymentTypeWatcher();
   setupMsiWatcher();
-  renderBanksList();
-  renderCategoryLinkBankOptions();
-  renderCategoriesList();
-  refreshAll();
   updateBankFieldVisibility();
+  
+  await load();
 }
 
 document.addEventListener('DOMContentLoaded', init);
